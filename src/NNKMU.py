@@ -11,6 +11,18 @@ class NNKMU():
                 nnk_tol=-1, metric='error', model=None, ep=None, weighted=False,
                 num_warmup=5, num_cooldown=2):
         
+        """
+        num_epochs: number of epochs to run the clustering for
+        n_components: number of initial dictionary atoms / cluster centers
+        top_k: assignment sparsity, i.e. maximum number of atoms a point can be assigned to
+        metric: for anomaly detection, which metric to use. options: error, hamming, manhattan, euclid, mahalanobis
+        model: optionally provide a starting set of cluster centers
+        ep: entropy parameter - larger values lead to a smaller number of final clusters. Tested range: 0, 0.001, 0.005, 0.01 
+        weighted: set to true to use the assigned weights when pruning instead of only using the counts
+        num_warmup: number of warmup epochs to train for before entropy-based pruning occurs
+        num_cooldown: number of cooldown epochs to train for after pruning is complete
+        """
+        
         self.epochs = num_epochs
         self.n_components = n_components
         self.top_k = top_k
@@ -46,7 +58,18 @@ class NNKMU():
         return x_opt, indices, error
     
     def fit(self, X_train, y_train=None, batch_size=32, shuffle=True, num_workers=1, drop_last=False):        
+        """
+        Perform the NNK-Means clustering on the provided data
 
+        X_train: data to be clustered
+
+        torch.utils.data.DataLoader arguments:
+
+        batch_size: batch size for the dataloader
+        shuffle: set to true to have the data reshuffled every epoch
+        num_workers: how many subprocesses to use for data loading
+        drop_last: set to true to drop last incomplete batch, if the dataset size is not divisible by batch_size
+        """
         X_train = torch.from_numpy(X_train)
         if self.ep == None or self.ep == 0.0:
             self.model = NNK_Means(n_components=self.n_components, n_nonzero_coefs=self.top_k, n_classes=None, 
@@ -81,6 +104,26 @@ class NNKMU():
         return error.cpu()
 
     def get_codes(self, X, batch_size=32, shuffle=False, num_workers=1, drop_last=False):
+        """
+        Compute the assignment of data to clusters.
+
+        X: data to be assigned to clusters
+
+        torch.utils.data.DataLoader arguments:
+
+        batch_size: batch size for the dataloader
+        shuffle: set to true to have the data reshuffled
+        num_workers: how many subprocesses to use for data loading
+        drop_last: set to true to drop last incomplete batch, if the dataset size is not divisible by batch_size
+
+        Returns: 
+
+        torch.tensor object of shape (dataset_size, dictionary_size):
+        
+        1) each row of the tensor corresponds to an element in the dataset
+        2) the value at index i of the row corresponds to the weight assigned to dictionary atom i
+        """
+
         data_loader = torch.utils.data.DataLoader(X, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=drop_last)
         x_opt, indices, _ = self.eval(data_loader)
         x_opt = x_opt.cpu()
@@ -129,7 +172,7 @@ class NNKMU():
     def save_model(self, file):
         torch.save(self.model, file)
 
-    def predict_score(self, X_test, X_train=None, multi_eval=False, eval_metrics=None):
+    def predict_score(self, X_test, X_train=None):
         if self.metric != 'error' and X_train is None: 
             raise RuntimeError('Using metric ' + self.metric + ' without providing X_train')
 
