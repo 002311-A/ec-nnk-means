@@ -42,7 +42,6 @@ data = load_data()
 
 model = NNKMU(num_epochs=epochs, metric=metric, n_components=atoms, ep=ep, weighted=False, num_warmup=1)
 model.fit(data)
-
 codes = model.get_codes(data)
 
-print(codes.shape)
+torch.save(codes, f"bin/agnews/agnews_codes_{atoms}_{sparsity}_{seed}.pt")
