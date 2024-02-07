@@ -269,12 +269,6 @@ class NNK_EC_Means(NNK_Means):
             self.dict_counts.scatter_add_(0, indices_nonzero, torch.ones_like(indices_nonzero).cuda())
             self.dict_weights.scatter_add_(0, indices_nonzero, x_opt_nonzero)
 
-            if not(warm_up):
-                if self.weighted_ec:
-                    self.dict_probs = self.dict_weights / torch.sum(self.dict_weights)
-                else: 
-                    self.dict_probs = self.dict_counts / torch.sum(self.dict_counts)
-
             return batch_data, interpolated, label_interpolated, x_opt, indices, error
     
     @torch.no_grad()
