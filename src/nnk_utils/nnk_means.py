@@ -1,4 +1,3 @@
-__author__ = "shekkizh"
 import torch
 import torch.nn as nn
 
@@ -221,7 +220,6 @@ class NNK_Means(nn.Module):
             self._update_buffer(batch_data, batch_label, error)
         if update_dict:
             self.update_dict()
-            # self.reset_cache()
             
         interpolated = torch.bmm(x_opt.unsqueeze(1), self.dictionary_atoms[indices]).squeeze(1)
         label_interpolated = None
@@ -236,9 +234,7 @@ class NNK_Means(nn.Module):
 class NNK_EC_Means(NNK_Means):
     def __init__(self, ep=0.01, weighted_ec=False, n_components=1000, n_nonzero_coefs=50, momentum=1.0, n_classes=None, influence_tol=1e-4, optim_itr=1000, optim_lr=None, optim_tol=1e-6, 
                     use_error_based_buffer=True, use_residual_update=False,  **kwargs):
-        """
-        ep: entropy parameter, balance between standard clustering and entropy-constraint
-        """
+        
         super().__init__(n_components, n_nonzero_coefs, momentum, n_classes, influence_tol, optim_itr, optim_lr, optim_tol, 
                     use_error_based_buffer, use_residual_update,  **kwargs)
         self.ep = ep
@@ -248,7 +244,7 @@ class NNK_EC_Means(NNK_Means):
         self.dict_weights = torch.zeros(self.n_components).cuda()
 
     def _calculate_similarity(self, input1, input2, batched_inputs=False):
-        k = super()._calculate_similarity(input1, input2, batched_inputs) ## has shape (batch_size, self.n_components)
+        k = super()._calculate_similarity(input1, input2, batched_inputs)
         if batched_inputs:
             return k
         return k + (self.ep * torch.log(self.dict_probs.unsqueeze(0)))
