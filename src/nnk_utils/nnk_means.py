@@ -247,9 +247,11 @@ class NNK_EC_Means(NNK_Means):
         k = super()._calculate_similarity(input1, input2, batched_inputs)
         if batched_inputs:
             return k
-        return k + (self.ep * torch.log(self.dict_probs.unsqueeze(0)))
+        ep = 0 if self.warm_up else self.ep
+        return k + (ep * torch.log(self.dict_probs.unsqueeze(0)))
     
     def forward(self, batch_data, batch_label=None, update_cache=True, update_dict=False, get_codes=False, warm_up=True):
+            self.warm_up = warm_up
             batch_data = self._process_data(batch_data)
             batch_data, interpolated, label_interpolated, x_opt, indices, error =  super().forward(batch_data, batch_label, update_cache, update_dict)
 
